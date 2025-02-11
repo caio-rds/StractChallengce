@@ -1,4 +1,6 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, render_template
+
+from src.fetch import accounts
 
 app = Flask(__name__)
 
@@ -8,11 +10,14 @@ def hello_world():
 
 @app.get('/<platform>')
 def hello_platform(platform):
-    ads = [
-        {'platform': platform, 'ad_name': 'Some Ad', 'clicks': 10},
-        {'platform': platform, 'ad_name': 'Other Ad', 'clicks': 20}
-    ]
-    return render_template('platform.html', platform=platform, ads=ads)
+    req = accounts(platform)
+    return jsonify(req)
+
+    # ads = [
+    #     {'platform': platform, 'ad_name': 'Some Ad', 'clicks': 10},
+    #     {'platform': platform, 'ad_name': 'Other Ad', 'clicks': 20}
+    # ]
+    # return render_template('platform.html', platform=platform, ads=ads)
 
 @app.get('/geral')
 def geral():
