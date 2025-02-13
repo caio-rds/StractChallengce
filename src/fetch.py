@@ -10,7 +10,7 @@ session.headers.update({
 
 data = {}
 
-def fetch_data(platform_index: str) -> dict | str:
+def fetch_data(platform_index: str, platform_name: str) -> dict | str:
 
     all_accounts, all_fields, insights_data = [], [], []
     page = 1
@@ -55,7 +55,7 @@ def fetch_data(platform_index: str) -> dict | str:
             page += 1
 
     all_fields.extend([{'value': 'account_name', 'text': 'Account Name'}, {'value': 'account', 'text': 'Account'}])
-    return {'accounts': all_accounts, 'fields': all_fields, 'insights': insights_data}
+    return {'accounts': all_accounts, 'fields': all_fields, 'insights': insights_data, 'name': platform_name}
 
 
 def fetch_platforms() -> list:
@@ -63,10 +63,11 @@ def fetch_platforms() -> list:
     return response.json().get('platforms', [])
 
 for platform in fetch_platforms():
-    req = fetch_data(platform['value'])
-    data[platform['value']] = req
-    data[platform['value']].update({'name': platform.get('text', '')})
-    print(data)
+    platform_value = platform.get('value')
+    platform_text = platform.get('text')
+    req = fetch_data(platform_value, platform_text)
+    data[platform_value] = req
+
 
 def get_data(platform_index: str | None = False) -> dict | None:
     if platform_index == 'all':

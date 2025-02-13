@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, render_template
 
-from src.fetch import fetch_data, fetch_platforms, get_data
+from src.fetch import get_data
 
 app = Flask(__name__)
 
@@ -13,13 +13,14 @@ def index():
 
 @app.get('/<platform_p>')
 def platform(platform_p):
-    req = fetch_data(platform_p)
+    req = get_data(platform_p)
     if req:
         return render_template('platform.html',
-                               platform=req.get('name', ''),
+                               platform=req.get('name', 'abc'),
                                ads=req.get('insights', []),
                                fields=req.get('fields', []))
     return jsonify({'error': 'Platform not found'}), 404
+
 
 @app.get('/geral')
 def general():
@@ -43,7 +44,12 @@ def general():
         else:
             ad['cost_per_click'] = None
 
-    return render_template('platform.html', platform='Geral', ads=all_ads, fields=[{'value': field, 'text': field.replace('_', ' ').title()} for field in all_fields])
+    return render_template('platform.html',
+                           platform='Geral',
+                           ads=all_ads,
+                           fields=[{'value': field, 'text': field.replace('_', ' ').title()} for field in all_fields]
+                           )
+
 
 @app.get('/geral/resumo')
 def general_resume():
@@ -74,11 +80,13 @@ def general_resume():
     # Convert aggregated data to list
     aggregated_ads = list(aggregated_data.values())
 
-    return render_template('platform.html', platform='Geral Resumo', ads=aggregated_ads, fields=[{'value': field, 'text': field.replace('_', ' ').title()} for field in all_fields])
+    return render_template('platform.html', platform='Geral Resumo', ads=aggregated_ads,
+                           fields=[{'value': field, 'text': field.replace('_', ' ').title()} for field in all_fields])
+
 
 @app.route('/<platform_p>/resumo', methods=['GET'])
 def platform_resume(platform_p):
-    req = fetch_data(platform_p)
+    req = get_data(platform_p)
     if not req:
         return jsonify({'error': 'Platform not found'}), 404
     ads = req.get('insights', [])
@@ -97,11 +105,14 @@ def platform_resume(platform_p):
 
     # Convert aggregated data to list
     aggregated_ads = list(aggregated_data.values())
-    return render_template('platform.html', platform=req.get('name', ''), ads=aggregated_ads, fields=req.get('fields', []))
+    return render_template('platform.html', platform=req.get('name', ''), ads=aggregated_ads,
+                           fields=req.get('fields', []))
+
 
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({'status': 'ok'})
+
 
 if __name__ == '__main__':
     app.run()
