@@ -8,78 +8,69 @@ session.headers.update({
     'Authorization': f'Bearer {token}'
 })
 
-def exists_platform(platform: str) -> dict:
-    response = session.get(f'{base_url}/platforms')
-    data = response.json()
-    platforms = data.get('platforms', [])
-    for plat in platforms:
-        if plat.get('value', '') == platform:
-            return {'value': plat.get('value', ''), 'text': plat.get('text', '')}
+data = {}
 
-def fetch_platforms() -> list:
-    response = session.get(f'{base_url}/platforms')
-    data = response.json()
-    return data.get('platforms', [])
+def fetch_data(platform_index: str) -> dict | str:
 
-def fetch_data(platform: str) -> dict:
-    # Fetch accounts
-    all_accounts = []
+    all_accounts, all_fields, insights_data = [], [], []
     page = 1
+
     while True:
-        response = session.get(f'{base_url}/accounts', params={
-            'platform': platform,
-            'page': page
-        })
-        data = response.json()
-        all_accounts.extend(data.get('accounts', []))
-        pagination = data.get('pagination', {})
+        response = session.get(f'{base_url}/accounts', params={'platform': platform_index, 'page': page})
+        resp_data = response.json()
+        all_accounts.extend(resp_data.get('accounts', []))
+        pagination = resp_data.get('pagination', {})
         if not pagination or pagination.get('current') >= pagination.get('total'):
             break
         page += 1
 
-    # Fetch fields
-    all_fields = []
     page = 1
     while True:
-        response = session.get(f'{base_url}/fields', params={
-            'platform': platform,
-            'page': page
-        })
-        data = response.json()
-        all_fields.extend(data.get('fields', []))
-        pagination = data.get('pagination', {})
+        resp = session.get(f'{base_url}/fields', params={'platform': platform_index, 'page': page})
+        resp_data = resp.json()
+        all_fields.extend(resp_data.get('fields', []))
+        pagination = resp_data.get('pagination', {})
         if not pagination or pagination.get('current') >= pagination.get('total'):
             break
         page += 1
 
-    # Fetch insights for each account
-    insights_data = []
     for account in all_accounts:
-        account_id = account.get('id')
-        account_token = account.get('token')
-        account_name = account.get('name')
+        account_id, account_token, account_name = account.get('id'), account.get('token'), account.get('name')
         page = 1
         while True:
-            response = session.get(f'{base_url}/insights', params={
-                'platform': platform,
+            resp = session.get(f'{base_url}/insights', params={
+                'platform': platform_index,
                 'account': account_id,
                 'token': account_token,
                 'fields': ','.join([field['value'] for field in all_fields]),
                 'page': page
             })
-            data = response.json()
-            for insight in data.get('insights', []):
-                insight['account'] = account_id
-                insight['account_name'] = account_name
-
-            insights_data.extend(data.get('insights', []))
-            pagination = data.get('pagination', {})
+            resp_data = resp.json()
+            for insight in resp_data.get('insights', []):
+                insight.update({'account': account_id, 'account_name': account_name})
+            insights_data.extend(resp_data.get('insights', []))
+            pagination = resp_data.get('pagination', {})
             if not pagination or pagination.get('current') >= pagination.get('total'):
                 break
             page += 1
+
     all_fields.extend([{'value': 'account_name', 'text': 'Account Name'}, {'value': 'account', 'text': 'Account'}])
-    return {
-        'accounts': all_accounts,
-        'fields': all_fields,
-        'insights': insights_data
-    }
+    return {'accounts': all_accounts, 'fields': all_fields, 'insights': insights_data}
+
+
+def fetch_platforms() -> list:
+    response = session.get(f'{base_url}/platforms')
+    return response.json().get('platforms', [])
+
+for platform in fetch_platforms():
+    req = fetch_data(platform['value'])
+    data[platform['value']] = req
+    data[platform['value']].update({'name': platform.get('text', '')})
+    print(data)
+
+def get_data(platform_index: str | None = False) -> dict | None:
+    if platform_index == 'all':
+        return data
+    if data[platform_index]:
+        return data[platform_index]
+    return None

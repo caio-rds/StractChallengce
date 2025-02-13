@@ -5,26 +5,24 @@
     <title>Platform: {{ platform }}</title>
 </head>
 <body>
-    <h1>Platform: {{ platform }}</h1>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Platform</th>
-                <th>Ad Name</th>
-                <th>Clicks</th>
-                <!-- Add other columns as needed -->
-            </tr>
-        </thead>
-        <tbody>
-            {% for ad in ads %}
-            <tr>
-                <td>{{ ad.platform }}</td>
-                <td>{{ ad.ad_name }}</td>
-                <td>{{ ad.clicks }}</td>
-                <!-- Add other columns as needed -->
-            </tr>
+<h1>Platform: {{ platform }}</h1>
+<table border="1">
+    <thead>
+    <tr>
+        {% for field in fields %}
+            <th>{{ field.text }}</th>
+        {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+    {% for ad in ads %}
+        <tr>
+            {% for field in fields %}
+                <td>{{ ad[field.value] }}</td>
             {% endfor %}
-        </tbody>
-    </table>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
 </body>
 </html>
