@@ -11,7 +11,6 @@ session.headers.update({
 data = {}
 
 def fetch_data(platform_index: str, platform_name: str) -> dict | str:
-
     all_accounts, all_fields, insights_data = [], [], []
     page = 1
 
@@ -20,7 +19,7 @@ def fetch_data(platform_index: str, platform_name: str) -> dict | str:
         resp_data = response.json()
         all_accounts.extend(resp_data.get('accounts', []))
         pagination = resp_data.get('pagination', {})
-        if not pagination or pagination.get('current') >= pagination.get('total'):
+        if not pagination or pagination.get('current', '') >= pagination.get('total', ''):
             break
         page += 1
 
@@ -30,12 +29,12 @@ def fetch_data(platform_index: str, platform_name: str) -> dict | str:
         resp_data = resp.json()
         all_fields.extend(resp_data.get('fields', []))
         pagination = resp_data.get('pagination', {})
-        if not pagination or pagination.get('current') >= pagination.get('total'):
+        if not pagination or pagination.get('current', '') >= pagination.get('total', ''):
             break
         page += 1
 
     for account in all_accounts:
-        account_id, account_token, account_name = account.get('id'), account.get('token'), account.get('name')
+        account_id, account_token, account_name = account.get('id', ''), account.get('token', ''), account.get('name', '')
         page = 1
         while True:
             resp = session.get(f'{base_url}/insights', params={
@@ -63,15 +62,13 @@ def fetch_platforms() -> list:
     return response.json().get('platforms', [])
 
 for platform in fetch_platforms():
-    platform_value = platform.get('value')
-    platform_text = platform.get('text')
+    platform_value = platform.get('value', '')
+    platform_text = platform.get('text', '')
     req = fetch_data(platform_value, platform_text)
-    data[platform_value] = req
+    data.update({platform_value: req})
 
 
 def get_data(platform_index: str | None = False) -> dict | None:
     if platform_index == 'all':
         return data
-    if data[platform_index]:
-        return data[platform_index]
-    return None
+    return data.get(platform_index, None)
